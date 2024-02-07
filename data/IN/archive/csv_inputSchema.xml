@@ -1,0 +1,17 @@
+<data>
+    <items>
+        <Code>2018-01-01</Code>
+        <Wert>01</Wert>
+        <Beschreibung>1.0.0</Beschreibung>
+    </items>
+    <items>
+        <Code>2018-02-21</Code>
+        <Wert>01</Wert>
+        <Beschreibung>1.2.0</Beschreibung>
+    </items>
+    <items>
+        <Code>2018-03-01</Code>
+        <Wert>03</Wert>
+        <Beschreibung>2.0.0</Beschreibung>
+    </items>
+</data>
