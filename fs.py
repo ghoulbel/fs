@@ -14,7 +14,7 @@ def split_xml(input_files, output_dir):
             output_file = os.path.join(output_dir, f"{os.path.basename(input_file)}_{i}.xml")
             with open(output_file, 'wb') as f:
                 f.write(ET.tostring(item))
-        # Move the input file to archive
+
         archive_dir = os.path.join(os.path.dirname(input_file), "archive")
         os.makedirs(archive_dir, exist_ok=True)
         shutil.move(input_file, os.path.join(archive_dir, os.path.basename(input_file)))
