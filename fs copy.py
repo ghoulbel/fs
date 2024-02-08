@@ -25,32 +25,30 @@ def split_xml(input_files, output_dir):
 
         tree = ET.parse(input_file)
         root = tree.getroot()
-        header = root[0]
         child = root[1]
 
         for i, product in enumerate(root.findall(child.tag), start=1):
-                        # Remove "ns0:" prefix from all elements except the first segment "ONIXmessage"
-            for elem in product.iter():
-                local_name = elem.tag.split('}')[-1]
-                elem.tag = local_name
-            
-            for elem in header.iter():
-                local_name = elem.tag.split('}')[-1]
-                elem.tag = local_name
-
+            # Create a new ONIXmessage element for each product
             onix_message = ET.Element('ONIXmessage')
             onix_message.set('xmlns', namespace)
             onix_message.set('release', release)
 
-            onix_message.append(header) 
+            # Append the current product to the ONIXmessage tree
+            onix_message.append(root[0])  # Append header
             onix_message.append(product)
 
+            # Convert the onix_message to string and remove namespace prefixes
+            onix_message_str = remove_namespace_prefixes(ET.tostring(onix_message))
+
+            # Generate a unique identifier for the output file name
             output_filename = f"{os.path.basename(input_file)}_{i}.xml"
 
+            # Write the product XML to a file
             output_file = os.path.join(output_dir, output_filename)
             with open(output_file, 'w') as f:
-                f.write(ET.tostring(onix_message, encoding='unicode'))
+                f.write(onix_message_str)
 
+        # Move the input file to the archive directory
         archive_dir = os.path.join(os.path.dirname(input_file), "archive")
         os.makedirs(archive_dir, exist_ok=True)
         shutil.move(input_file, os.path.join(archive_dir, os.path.basename(input_file)))
