@@ -4,12 +4,6 @@ import glob
 import xml.etree.ElementTree as ET
 import sys
 
-def remove_namespace_prefixes(xml_string):
-    root = ET.fromstring(xml_string)
-    for elem in root.iter():
-        local_name = elem.tag.split('}')[-1]
-        elem.tag = local_name
-    return ET.tostring(root, encoding='unicode')
 
 def extract_namespace_and_release(input_file):
     with open(input_file, 'r') as f:
@@ -29,7 +23,6 @@ def split_xml(input_files, output_dir):
         child = root[1]
 
         for i, product in enumerate(root.findall(child.tag), start=1):
-                        # Remove "ns0:" prefix from all elements except the first segment "ONIXmessage"
             for elem in product.iter():
                 local_name = elem.tag.split('}')[-1]
                 elem.tag = local_name
@@ -71,6 +64,13 @@ if __name__ == "__main__":
 
 
 
+# def remove_namespace_prefixes(xml_string):
+#     root = ET.fromstring(xml_string)
+#     for elem in root.iter():
+#         local_name = elem.tag.split('}')[-1]
+#         elem.tag = local_name
+#     return ET.tostring(root, encoding='unicode')
+
 
 # if __name__ == "__main__":
 #     input_files = glob.glob("data/IN/*.xml")
@@ -80,19 +80,19 @@ if __name__ == "__main__":
 
 
 
-#Test
-    # if __name__ == "__main__":
-    # if len(sys.argv) != 3:
-    #     print("Usage: python script_name.py input_path output_path")
-    #     sys.exit(1)
+#Debug
+# if __name__ == "__main__":
+#     if len(sys.argv) != 3:
+#         print("Usage: python script_name.py input_path output_path")
+#         sys.exit(1)
 
-    # input_path = sys.argv[1]
-    # output_path = sys.argv[2]
+#     input_path = sys.argv[1]
+#     output_path = sys.argv[2]
 
-    # input_files = glob.glob(os.path.join(input_path, "*.xml"))
-    # for input_file in input_files:
-    #         tree = ET.parse(input_file)
-    #         root = tree.getroot()
-    #         child = root[1]
-    #         items = root.findall(child.tag)[0].tag
-    #         print(items)
+#     input_files = glob.glob(os.path.join(input_path, "*.xml"))
+#     for input_file in input_files:
+#             tree = ET.parse(input_file)
+#             root = tree.getroot()
+#             child = root[1]
+#             items = root.findall(child.tag)[0].tag
+#             print(items)
