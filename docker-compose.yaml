@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  my_service:
+    build:
+      context: .
+    volumes:
+      - ./data:/app/data
+    command: python fs.py data/IN/ data/OUT/

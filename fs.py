@@ -3,7 +3,7 @@ import shutil
 import glob
 import xml.etree.ElementTree as ET
 import sys
-
+import time
 
 def extract_namespace_and_release(input_file):
     with open(input_file, 'r') as f:
@@ -37,8 +37,8 @@ def split_xml(input_files, output_dir):
 
             onix_message.append(header) 
             onix_message.append(product)
-
-            output_filename = f"{os.path.basename(input_file)}_{i}.xml"
+            
+            output_filename = f"split_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
 
             output_file = os.path.join(output_dir, output_filename)
             with open(output_file, 'w') as f:
@@ -48,7 +48,6 @@ def split_xml(input_files, output_dir):
         os.makedirs(archive_dir, exist_ok=True)
         shutil.move(input_file, os.path.join(archive_dir, os.path.basename(input_file)))
 
-
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python script_name.py input_path output_path")
@@ -57,10 +56,13 @@ if __name__ == "__main__":
     input_path = sys.argv[1]
     output_path = sys.argv[2]
 
-    input_files = glob.glob(os.path.join(input_path, "*.xml"))
-
     os.makedirs(output_path, exist_ok=True)
-    split_xml(input_files, output_path)
+
+    while True:
+        input_files = glob.glob(os.path.join(input_path, "*.xml"))
+        if input_files:
+            split_xml(input_files, output_path)
+        time.sleep(15)
 
 
 
