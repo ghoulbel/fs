@@ -38,7 +38,7 @@ def split_xml(input_files, output_dir):
             onix_message.append(header) 
             onix_message.append(product)
             
-            output_filename = f"split_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
+            output_filename = f"OnixSplit_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
 
             output_file = os.path.join(output_dir, output_filename)
             with open(output_file, 'w') as f:
