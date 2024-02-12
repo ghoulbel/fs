@@ -13,24 +13,25 @@ def extract_namespace_and_release(input_file):
                 release = line.split('release="')[1].split('"')[0]
                 return namespace, release
 
+import os
+import shutil
+import xml.etree.ElementTree as ET
+
 def split_xml(input_files, output_dir):
     for input_file in input_files:
         namespace, release = extract_namespace_and_release(input_file)
 
-        tree = ET.parse(input_file)
-        root = tree.getroot()
+        context = ET.iterparse(input_file, events=("start",))
+        _, root = next(context)
+
+        for event, elem in context:
+            local_name = elem.tag.split('}')[-1]
+            elem.tag = local_name
+
         header = root[0]
         child = root[1]
 
         for i, product in enumerate(root.findall(child.tag), start=1):
-            for elem in product.iter():
-                local_name = elem.tag.split('}')[-1]
-                elem.tag = local_name
-            
-            for elem in header.iter():
-                local_name = elem.tag.split('}')[-1]
-                elem.tag = local_name
-
             onix_message = ET.Element('ONIXmessage')
             onix_message.set('xmlns', namespace)
             onix_message.set('release', release)
@@ -47,6 +48,7 @@ def split_xml(input_files, output_dir):
         archive_dir = os.path.join(os.path.dirname(input_file), "archive")
         os.makedirs(archive_dir, exist_ok=True)
         shutil.move(input_file, os.path.join(archive_dir, os.path.basename(input_file)))
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
