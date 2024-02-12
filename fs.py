@@ -13,10 +13,6 @@ def extract_namespace_and_release(input_file):
                 release = line.split('release="')[1].split('"')[0]
                 return namespace, release
 
-import os
-import shutil
-import xml.etree.ElementTree as ET
-
 def split_xml(input_files, output_dir):
     for input_file in input_files:
         namespace, release = extract_namespace_and_release(input_file)
