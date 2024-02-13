@@ -18,44 +18,69 @@ def clean_onix_message(element):
     for child in element:
         clean_onix_message(child)
 
+def is_utf8(filename):
+    with open(filename, 'rb') as f:
+        try:
+            f.read().decode('utf-8')
+            return True
+        except UnicodeDecodeError:
+            return False
+
+def is_large_file(filename, size_limit):
+    return os.path.getsize(filename) > size_limit
+        
 def split_xml(input_files, output_dir):
     for input_file in input_files:
         namespace, release = extract_namespace_and_release(input_file)
+        version = release.replace('.', '_')
+        if release == "3.0" and is_utf8(input_file) and is_large_file(input_file, 100 * 1024 * 1024):
+            output_dir_archive = os.path.join(os.path.dirname(input_file), "archive")
+            os.makedirs(output_dir_archive, exist_ok=True)
 
-        output_dir_archive = os.path.join(os.path.dirname(input_file), "archive")
-        os.makedirs(output_dir_archive, exist_ok=True)
+            with open(input_file, 'r') as f:
+                context = ET.iterparse(f, events=("start",))
+                _, root = next(context)
+                header = root[0]
 
-        with open(input_file, 'r') as f:
-            context = ET.iterparse(f, events=("start",))
-            _, root = next(context)
-            header = root[0]
-            child = root[1]
+                # Initialize variables
+                onix_message = ET.Element('ONIXmessage', {'xmlns': namespace, 'release': release})
+                onix_message.append(header)
+                current_file_size = len(ET.tostring(onix_message, encoding='utf-8'))
+                max_file_size = 100 * 1024 * 1024
+                i = 1
 
-            i = 1
-            for event, elem in context:
-                local_name = elem.tag.split('}')[-1]
-                elem.tag = local_name
-                if local_name == child.tag:
-                    onix_message = ET.Element('ONIXmessage', {'xmlns': namespace, 'release': release})
+                for event, elem in context:
+                    if elem.tag.endswith('}product'):
+                        onix_message.append(elem)
+                        elem_string = ET.tostring(elem, encoding='utf-8')
+                        current_file_size += len(elem_string)
 
-                    onix_message.append(header)
-                    onix_message.append(elem)
+                        # Check if the file size limit is exceeded
+                        if current_file_size >= max_file_size:
+                            clean_onix_message(onix_message)
+                            output_filename = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
+                            output_file = os.path.join(output_dir, output_filename)
+                            with open(output_file, 'wb') as out_f:
+                                out_f.write(ET.tostring(onix_message, encoding='utf-8'))
+                            i += 1  # Increment output filename
+                            onix_message.clear()
+                            onix_message = ET.Element('ONIXmessage', {'xmlns': namespace, 'release': release})  # Add namespace and release
+                            onix_message.append(header)
+                            current_file_size = len(ET.tostring(onix_message, encoding='utf-8'))
 
+                # Write remaining products if any
+                if len(onix_message) > 1:  # Check if there are products in the message
                     clean_onix_message(onix_message)
-
-                    output_filename = f"OnixSplit_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
-
+                    output_filename = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
                     output_file = os.path.join(output_dir, output_filename)
-                    with open(output_file, 'w') as out_f:
-                        out_f.write(ET.tostring(onix_message, encoding='unicode'))
+                    with open(output_file, 'wb') as out_f:
+                        out_f.write(ET.tostring(onix_message, encoding='utf-8'))
 
-                    i += 1
-                    elem.clear()
-                    onix_message.clear()
-                    out_f.close()
+            shutil.move(input_file, os.path.join(output_dir_archive, os.path.basename(input_file)))
 
-        shutil.move(input_file, os.path.join(output_dir_archive, os.path.basename(input_file)))
-
+        else:
+            output_filename = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}.xml"
+            shutil.move(input_file, os.path.join(output_dir, output_filename))
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
