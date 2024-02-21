@@ -42,7 +42,6 @@ def split_xml(input_files, output_dir, max_file_size, split_file_size):
                 _, root = next(context)
                 header = root[0]
 
-                # Initialize variables
                 onix_message = ET.Element('ONIXmessage', {'xmlns': namespace, 'release': release})
                 onix_message.append(header)
                 current_file_size = len(ET.tostring(onix_message, encoding='utf-8'))
@@ -54,32 +53,34 @@ def split_xml(input_files, output_dir, max_file_size, split_file_size):
                         elem_string = ET.tostring(elem, encoding='utf-8')
                         current_file_size += len(elem_string)
 
-                        # Check if the file size limit is exceeded
                         if current_file_size >= split_file_size:
                             clean_onix_message(onix_message)
-                            output_filename = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
-                            output_file = os.path.join(output_dir, output_filename)
-                            with open(output_file, 'wb') as out_f:
+                            output_filename_tmp = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml.tmp"
+                            output_file_tmp = os.path.join(output_dir, output_filename_tmp)
+                            with open(output_file_tmp, 'wb') as out_f:
                                 out_f.write(ET.tostring(onix_message, encoding='utf-8'))
+                            os.rename(output_file_tmp, output_file_tmp[:-4])  # Remove .tmp extension
                             i += 1  # Increment output filename
                             onix_message.clear()
                             onix_message = ET.Element('ONIXmessage', {'xmlns': namespace, 'release': release})  # Add namespace and release
                             onix_message.append(header)
                             current_file_size = len(ET.tostring(onix_message, encoding='utf-8'))
 
-                # Write remaining products if any
-                if len(onix_message) > 1:  # Check if there are products in the message
+                if len(onix_message) > 1: 
                     clean_onix_message(onix_message)
-                    output_filename = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml"
-                    output_file = os.path.join(output_dir, output_filename)
-                    with open(output_file, 'wb') as out_f:
+                    output_filename_tmp = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}_{i}.xml.tmp"
+                    output_file_tmp = os.path.join(output_dir, output_filename_tmp)
+                    with open(output_file_tmp, 'wb') as out_f:
                         out_f.write(ET.tostring(onix_message, encoding='utf-8'))
+                    os.rename(output_file_tmp, output_file_tmp[:-4])  # Remove .tmp extension
 
             shutil.move(input_file, os.path.join(output_dir_archive, os.path.basename(input_file)))
 
         else:
-            output_filename = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}.xml"
-            shutil.move(input_file, os.path.join(output_dir, output_filename))
+            output_filename_tmp = f"Orig_{version}_{os.path.splitext(os.path.basename(input_file))[0]}.xml.tmp"
+            output_file_tmp = os.path.join(output_dir, output_filename_tmp)
+            shutil.move(input_file, output_file_tmp)
+            os.rename(output_file_tmp, output_file_tmp[:-4])  # Remove .tmp extension
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
@@ -98,6 +99,7 @@ if __name__ == "__main__":
         if input_files:
             split_xml(input_files, output_path, max_file_size, split_file_size)
         time.sleep(15)
+
 
 
 
