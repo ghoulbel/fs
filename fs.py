@@ -76,18 +76,18 @@ def split_xml(input_file_path, output_folder, max_file_size, split_file_size):
     xml_declaration = extract_xml_declaration(input_file_path)
 
 
-    if not (release == "3.0" and is_utf8(input_file_path)):
+    if not is_utf8(input_file_path):
         # Move to failed folder
         failed_folder = os.path.join(os.path.dirname(input_file_path), 'failed')
         os.makedirs(failed_folder, exist_ok=True)
         shutil.move(input_file_path, os.path.join(failed_folder, os.path.basename(input_file_path)))
         logging.info(f"Failed to process file: {os.path.join(failed_folder, os.path.basename(input_file_path))}")
         return False
-    
-    if not is_large_file(input_file_path, max_file_size):
+
+    if not (is_large_file(input_file_path, max_file_size) or release == "3.0"):
         output_file_name = f"{output_folder}/Orig_{version}_{file_name}"
         shutil.copy(input_file_path, output_file_name)
-        logging.info(f"Small file, just moved: {output_file_name}")
+        logging.info(f"File is small or not Version 3.0, just moved: {output_file_name}")
         return True
         
     if is_file_being_written(input_file_path):
