@@ -6,4 +6,4 @@ services:
       context: .
     volumes:
       - ./data:/app/data
-    command: python fs.py data/IN/ data/OUT/ 524288000 209715200
+    command: python fs.py data/IN/ data/OUT/ 500 200

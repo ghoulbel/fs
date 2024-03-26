@@ -6,4 +6,4 @@ COPY . /data
 
 COPY fs.py .
 
-CMD ["python", "fs.py", "data/IN/", "data/OUT/", "524288000", "209715200"]
+#CMD ["python", "fs.py", "data/IN/", "data/OUT/", "500", "200"]
