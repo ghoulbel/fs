@@ -1,9 +1,11 @@
 version: '3.8'
 
 services:
-  my_service:
+  xml_filesplitter:
     build:
       context: .
     volumes:
       - ./data:/app/data
     command: python fs.py data/IN/ data/OUT/ 500 200
+    # Set memory limit (e.g., 512MB)
+    mem_limit: 4g
