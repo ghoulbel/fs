@@ -7,5 +7,4 @@ services:
     volumes:
       - ./data:/app/data
     command: python fs.py data/IN/ data/OUT/ 500 200
-    # Set memory limit (e.g., 512MB)
-    mem_limit: 4g
+

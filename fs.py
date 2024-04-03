@@ -67,6 +67,32 @@ def clean_onix_message(element):
     for child in element:
         clean_onix_message(child)
 
+def initialize_new_file(file_path, xml_declaration, onix_message_str, header_str):
+    output_writer = open(file_path, 'wb')
+    
+    # write declaration
+    output_declaration = xml_declaration + "\n"
+    output_writer.write(output_declaration.encode('UTF-8'))
+    output_writer.flush()
+
+    # write onix message
+    output_writer.write(onix_message_str.encode('UTF-8'))
+    output_writer.write("\n".encode('UTF-8'))
+    output_writer.flush()
+
+    # write header
+    output_writer.write(header_str.encode('UTF-8'))
+    output_writer.flush()
+
+    return output_writer
+
+def finish_file(output_writer, file_path_tmp, file_path_target):
+    # close onix message
+    output_writer.write("</ONIXmessage>".encode('UTF-8'))
+    output_writer.flush()
+    output_writer.close()
+    # remove tmp lock
+    shutil.move(file_path_tmp, file_path_target)
 
 def split_xml(input_file_path, output_folder, max_file_size, split_file_size):
     namespace, release = extract_namespace_and_release(input_file_path)
@@ -96,48 +122,53 @@ def split_xml(input_file_path, output_folder, max_file_size, split_file_size):
     
 
     context = ET.iterparse(input_file_path, events=('start', 'end'))
+    ET.register_namespace('', "http://ns.editeur.org/onix/3.0/short")
     _, root = next(context)
     header = root[0]
     child = root[1]
+    # Serialize the XML header element to a string
+    header_str = ET.tostring(header, encoding='unicode')
+    # Format the string with multiple lines if needed
+    header_str = header_str.replace(' xmlns="http://ns.editeur.org/onix/3.0/short"', '')
+    header_str = header_str.replace('><', '>\n<')
 
-    file_count = 0
-    current_size = 0
     onix_message = ET.Element('ONIXmessage', {'xmlns': namespace, 'release': release})
-    onix_message.append(header)
-    clean_onix_message(onix_message)
+    onix_message_str = str(ET.tostring(onix_message, encoding='unicode')).replace(' />', '>')
+    file_count = 1
+
+    output_file_name_tmp = f"{output_folder}/Orig_{version}_{file_name_no_extension}_{file_count}.xml.tmp"
+    output_writer = initialize_new_file(output_file_name_tmp, xml_declaration, onix_message_str, header_str)
     
     logging.info(f"Processing file: {input_file_path}...")
 
     for event, element in context:
         if event == 'end' and element.tag.endswith('}' + child.tag.split('}')[-1]):
-            clean_onix_message(element)
-            onix_message.append(element)
-            current_size += sys.getsizeof(ET.tostring(element, encoding='utf-8'))
+            current_size = os.path.getsize(output_file_name_tmp)
             
             if current_size >= split_file_size:
-                output_file_name_tmp = f"{output_folder}/Orig_{version}_{file_name_no_extension}_{file_count}.xml.tmp"
-                with open(output_file_name_tmp, 'wb') as output_file:
-                    output_file.write((xml_declaration + '\n').encode('utf-8'))
-                    output_file.write(ET.tostring(onix_message, encoding='utf-8'))
                 output_file_name = output_file_name_tmp.split(".tmp")[0]
-                shutil.move(output_file_name_tmp, output_file_name)
+                finish_file(output_writer, output_file_name_tmp, output_file_name)
 
                 logging.info(f"Saved file: {output_file_name_tmp}")
 
-                onix_message.clear()
-                onix_message = ET.Element('ONIXmessage', {'xmlns': namespace, 'release': release})
-                onix_message.append(header)
-                clean_onix_message(onix_message)
                 file_count += 1
-                current_size = 0
+                output_file_name_tmp = f"{output_folder}/Orig_{version}_{file_name_no_extension}_{file_count}.xml.tmp"
+                output_writer = initialize_new_file(output_file_name_tmp, xml_declaration, onix_message_str, header_str)
 
-    if len(onix_message) > 0:  # Write the remaining elements to a file
-        output_file_name_tmp = f"{output_folder}/Orig_{version}_{file_name_no_extension}_{file_count}.xml.tmp"
-        with open(output_file_name_tmp, 'wb') as output_file:
-            output_file.write((xml_declaration + '\n').encode('utf-8'))
-            output_file.write(ET.tostring(onix_message, encoding='utf-8'))
+            # write product item
+            element_str = ET.tostring(element, encoding='unicode')
+            element_str = element_str.replace(' xmlns="http://ns.editeur.org/onix/3.0/short"', '')
+            element_str = element_str.replace('><', '>\n<')
+            output_writer.write(element_str.encode('UTF-8'))
+            output_writer.flush()
+
+            element.clear()
+
+    current_size = os.path.getsize(output_file_name_tmp)
+    if current_size > 109:  # Write the remaining elements to a file
         output_file_name = output_file_name_tmp.split(".tmp")[0]
-        shutil.move(output_file_name_tmp, output_file_name)
+        finish_file(output_writer, output_file_name_tmp, output_file_name)
+        logging.info(f"Saved last file: {output_file_name_tmp}")
     
     logging.info(f"Finished processing file: {input_file_path}")
     return True
